@@ -1,6 +1,7 @@
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const person = require('./models/person')
 
 const app = express()
 
@@ -21,32 +22,9 @@ app.use(morgan(function (tokens, req, res) {
 )
 
 
-let persons = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
 
 app.get("/api/persons", (req,res) => {
-    res.json(persons)
+    person.find({}).then(result => res.json(result))
 })
 app.get("/info", (req,res) => {
     const date = new Date()
@@ -94,22 +72,20 @@ app.post("/api/persons", (req,res) => {
             error: "content missing"
         })
     }
-    if(nameExists(req.body.name)){
-        return res.status(400).json({
-            error: "name already exists"
-        })
-    }
+    // if(nameExists(req.body.name)){
+    //     return res.status(400).json({
+    //         error: "name already exists"
+    //     })
+    // }
 
-    const person = {
+    const newPerson = new person({
         name: req.body.name,
-        number: req.body.number,
-        id: generateID()
-    }
+        number: req.body.number
+    })
 
-    persons = persons.concat(person)
-
-    console.log(person)
-    res.json(person)
+    newPerson.save().then(result => {
+        res.json(result)
+    })    
 })
 
 const PORT = process.env.PORT || 3001
