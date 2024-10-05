@@ -26,6 +26,7 @@ app.use(morgan(function (tokens, req, res) {
 app.get("/api/persons", (req,res) => {
     person.find({}).then(result => res.json(result))
 })
+
 app.get("/info", (req,res) => {
     const date = new Date()
     const month = ["Jan", "Feb", "March", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -39,22 +40,32 @@ app.get("/info", (req,res) => {
     )
     res.send(body)
 })
-app.get("/api/persons/:id", (req,res) => {
+app.put("/api/persons/:id", (req, res, next) => {
     const id = req.params.id
-    const person = persons.find((n) => n.id === id)
-
-    if(person){
-        res.json(person)
-    }else{
-        res.status(404).end()
+    const note = {
+        name: req.body.name,
+        number: req.body.number
     }
+
+    person.findByIdAndUpdate(id, note, {new: true}).then(result => {
+        res.json(result)
+    }).catch(err => next(err))
+})
+app.get("/api/persons/:id", (req,res,next) => {
+    const id = req.params.id
+    
+    person.findById(id).then(result => {
+        res.json(result)
+    }).catch(err => next(err))
+
 })
 
-app.delete("/api/persons/:id", (req,res) => {
+app.delete("/api/persons/:id", (req,res, next) => {
     const id = req.params.id
-    persons = persons.filter((person) => person.id !== id)
-    console.log("deleted id of ", id)
-    res.status(204).end()
+    person.findByIdAndDelete(id)
+        .then(result => res.json(result))
+        .catch(error => next(error))
+
 })
 
 const generateID = () => {
@@ -85,8 +96,25 @@ app.post("/api/persons", (req,res) => {
 
     newPerson.save().then(result => {
         res.json(result)
-    })    
+    })
 })
+
+const unkownEndpoint = (req, res, next) => {
+    return res.status(404).send({error: "unkown endpoint"})
+}
+
+app.use(unkownEndpoint)
+
+const errorHandler = (error, req, res, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+      return res.status(400).send({ error: 'malformatted id' })
+    }
+  
+    next(error)
+}
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
