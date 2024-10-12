@@ -7,13 +7,24 @@ mongoose.connect(process.env.url)
     .catch((err) => console.log(`err: ${err.message}`))
 
 
+const personValidator = (phoneNumber) => {
+  let regex = /^\d{2,4}-\d+$/;
+  return regex.test(phoneNumber);
+
+}
+const custom = [personValidator, 'Example Number: 0912-123123']
 const personSchema = mongoose.Schema({
     name: {
       type: String,
       minLength : 3,
-      required: true
+      required: true,
+      
     },
-    number: String,
+    number: {
+      type: String,
+      validate: custom,
+    },
+    
 })
 personSchema.set('toJSON', {
     transform: (document, returnedObject) => {
