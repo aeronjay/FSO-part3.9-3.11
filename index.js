@@ -77,7 +77,7 @@ const nameExists = (name) => {
     })
 }
 
-app.post("/api/persons", (req,res) => {
+app.post("/api/persons", (req,res, next) => {
     if(!(req.body.name) || !(req.body.number)) {
         return res.status(400).json({
             error: "content missing"
@@ -96,7 +96,7 @@ app.post("/api/persons", (req,res) => {
 
     newPerson.save().then(result => {
         res.json(result)
-    })
+    }).catch(error => next(error))
 })
 
 const unkownEndpoint = (req, res, next) => {
@@ -110,6 +110,8 @@ const errorHandler = (error, req, res, next) => {
 
     if (error.name === 'CastError') {
       return res.status(400).send({ error: 'malformatted id' })
+    }else if(error.name === 'ValidationError'){
+        return res.status(400).send({error: error.message})
     }
   
     next(error)
